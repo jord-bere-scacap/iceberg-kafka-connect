@@ -47,7 +47,7 @@ public class UnpartitionedDeltaWriterTest extends BaseWriterTest {
     Record row = GenericRecord.create(SCHEMA);
     row.setField("id", 123L);
     row.setField("data", "hello world!");
-    row.setField("id2", 123L);
+    row.setField("id2", 456L);
 
     WriteResult result = writeTest(ImmutableList.of(row), config, UnpartitionedDeltaWriter.class);
 
@@ -58,5 +58,9 @@ public class UnpartitionedDeltaWriterTest extends BaseWriterTest {
     assertThat(result.deleteFiles()).hasSize(1);
     assertThat(result.deleteFiles())
         .allMatch(file -> file.format() == FileFormat.fromString(format));
+    if (format.equals("parquet")) {
+      assertThat(readParquetFiles(result.dataFiles(), SCHEMA)).containsExactly(row);
+      assertParquetDeletes(result, ImmutableList.of(row));
+    }
   }
 }

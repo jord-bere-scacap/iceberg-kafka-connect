@@ -49,12 +49,12 @@ public class PartitionedDeltaWriterTest extends BaseWriterTest {
     Record row1 = GenericRecord.create(SCHEMA);
     row1.setField("id", 123L);
     row1.setField("data", "hello world!");
-    row1.setField("id2", 123L);
+    row1.setField("id2", 456L);
 
     Record row2 = GenericRecord.create(SCHEMA);
     row2.setField("id", 234L);
     row2.setField("data", "foobar");
-    row2.setField("id2", 234L);
+    row2.setField("id2", 567L);
 
     WriteResult result =
         writeTest(ImmutableList.of(row1, row2), config, PartitionedDeltaWriter.class);
@@ -66,5 +66,10 @@ public class PartitionedDeltaWriterTest extends BaseWriterTest {
     assertThat(result.deleteFiles()).hasSize(2);
     assertThat(result.deleteFiles())
         .allMatch(file -> file.format() == FileFormat.fromString(format));
+    if (format.equals("parquet")) {
+      assertThat(readParquetFiles(result.dataFiles(), SCHEMA))
+          .containsExactlyInAnyOrder(row1, row2);
+      assertParquetDeletes(result, ImmutableList.of(row1, row2));
+    }
   }
 }
