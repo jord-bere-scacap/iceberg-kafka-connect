@@ -11,15 +11,11 @@ configurations {
     resolutionStrategy.force "org.xerial.snappy:snappy-java:1.1.10.5"
     resolutionStrategy.force "org.apache.commons:commons-compress:1.26.0"
     resolutionStrategy.force "org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.1.1-tabular"
-    resolutionStrategy.eachDependency { details ->
-      if (details.requested.group == "io.netty") {
-        details.useVersion "4.1.100.Final"
-      }
-    }
   }
 }
 
 dependencies {
+  implementation(enforcedPlatform(libs.netty.bom))
   implementation project(":iceberg-kafka-connect")
   implementation project(":iceberg-kafka-connect-transforms")
   implementation(libs.hadoop.common) {
