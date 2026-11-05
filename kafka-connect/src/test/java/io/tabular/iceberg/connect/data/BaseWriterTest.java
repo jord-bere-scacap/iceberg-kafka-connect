@@ -25,16 +25,24 @@ import static org.mockito.Mockito.when;
 import io.tabular.iceberg.connect.IcebergSinkConfig;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.List;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.LocationProviders;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.encryption.PlaintextEncryptionManager;
 import org.apache.iceberg.inmemory.InMemoryFileIO;
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -89,5 +97,44 @@ public class BaseWriterTest {
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
+  }
+
+  protected List<Record> readParquetFiles(ContentFile<?>[] files, Schema projection) {
+    List<Record> rows = new ArrayList<>();
+    for (ContentFile<?> file : files) {
+      rows.addAll(readParquet(fileIO.newInputFile(file.path().toString()), projection));
+    }
+    return rows;
+  }
+
+  protected static List<Record> readParquet(InputFile input, Schema projection) {
+    try (CloseableIterable<Record> reader =
+        Parquet.read(input)
+            .project(projection)
+            .createReaderFunc(
+                fileSchema -> GenericParquetReaders.buildReader(projection, fileSchema))
+            .build()) {
+      return ImmutableList.copyOf(reader);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  protected void assertParquetDeletes(WriteResult result, List<Record> rows) {
+    Schema deleteSchema = SCHEMA.select("id", "id2");
+    List<Record> expectedKeys = new ArrayList<>();
+    for (Record row : rows) {
+      expectedKeys.add(
+          GenericRecord.create(deleteSchema)
+              .copy("id", row.getField("id"), "id2", row.getField("id2")));
+    }
+    assertThat(result.deleteFiles())
+        .allSatisfy(
+            file -> {
+              assertThat(file.content()).isEqualTo(FileContent.EQUALITY_DELETES);
+              assertThat(file.equalityFieldIds()).containsExactlyInAnyOrder(1, 3);
+            });
+    assertThat(readParquetFiles(result.deleteFiles(), deleteSchema))
+        .containsExactlyInAnyOrderElementsOf(expectedKeys);
   }
 }

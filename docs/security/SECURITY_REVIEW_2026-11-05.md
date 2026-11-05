@@ -57,7 +57,7 @@ The assessed local ZIP is `/private/tmp/order-aggregator-legacy-trial/iceberg-ka
 | Kafka / SLF4J | Compile/test references, including Kafka `3.5.1` | Excluded from shipped runtime | Do not count source Kafka 3.5.1 as a deployed plugin dependency. |
 | Other catalogs | Azure/GCP/Nessie; optional Hive distribution | Azure/GCP/Nessie bundles and Hive metastore omitted | Do not attribute the Hive distribution's CVEs to this baseline. ORC still embeds Hive storage API; that is distinct from shipping Hive metastore. |
 
-Evidence: [`gradle/libs.versions.toml`](../../gradle/libs.versions.toml), [`kafka-connect-runtime/build.gradle`](../../kafka-connect-runtime/build.gradle), recovered init script, [resolved graph](evidence/baseline-gradle-dependencies.txt), and [JAR hashes](evidence/baseline-jar-sha256.csv).
+Sources reviewed: [`gradle/libs.versions.toml`](../../gradle/libs.versions.toml), [`kafka-connect-runtime/build.gradle`](../../kafka-connect-runtime/build.gradle), recovered init script, resolved runtime graph, and JAR hashes.
 
 ## 2. Method and limits
 
@@ -72,11 +72,11 @@ Evidence: [`gradle/libs.versions.toml`](../../gradle/libs.versions.toml), [`kafk
 
 **SBOM caveats:** the unmodified scanner output identifies `iceberg-bundled-guava-1.5.2.jar` as package version `1.5.0`, despite the artifact filename and resolved graph specifying 1.5.2. Retain the JAR hash and graph as the provenance record; the embedded Guava 33.0.0-jre was independently observed. The scanner-generated SBOM also omits published identities for the three locally built connector JARs. Use it together with the complete 172-JAR inventory. A release SBOM should reconcile these identities rather than silently accepting the scanner's inference.
 
-Scanner counts can differ from Wiz because of advisory sources, package identification, CVSS versions, shaded-library detection, and deployment context. All raw matches, including low severity, are retained without suppression.
+Scanner counts can differ from Wiz because of advisory sources, package identification, CVSS versions, shaded-library detection, and deployment context. All 89 matches, including low severity, are listed without suppression in Appendix A.
 
 ## 3. Dependency findings and recommended changes
 
-The following groups account for **all 89 matches**. The complete per-match IDs, affected JARs, advisory fixed versions, titles, and links are in [baseline-findings.csv](evidence/baseline-findings.csv) and Appendix A. Upgrade versions below are advisory fix floors or candidate targets, **not a compatibility-tested dependency set**. Later releases still require a fresh scan.
+The following groups account for **all 89 matches**. The complete per-match IDs, affected JARs, advisory fixed versions, and links are in Appendix A. Upgrade versions below are advisory fix floors or candidate targets, **not a compatibility-tested dependency set**. Later releases still require a fresh scan.
 
 Replace ☐ with ☑ in the **Fixed** column as each finding group is resolved.
 
@@ -114,7 +114,7 @@ These are separate from the 89 scanner matches. Priorities below are reviewer as
 
 **Evidence:** [`Channel.java`](../../kafka-connect/src/main/java/io/tabular/iceberg/connect/channel/Channel.java), lines 122–139, decodes each control-topic value before comparing `event.groupId()`. [`EventDecoder.java`](../../kafka-connect/src/main/java/io/tabular/iceberg/connect/channel/EventDecoder.java), lines 71–77, calls Iceberg's decoder and retains a legacy fallback. [`DeprecatedAvroEncoderUtil.java`](../../kafka-connect-events/src/main/java/org/apache/iceberg/avro/DeprecatedAvroEncoderUtil.java), lines 86–93, parses the schema embedded in the message. [`DeprecatedGenericAvroReader.java`](../../kafka-connect-events/src/main/java/org/apache/iceberg/avro/DeprecatedGenericAvroReader.java), lines 91–96, uses its record name for class lookup before checking `IndexedRecord` assignability.
 
-Bytecode inspection of the shipped Iceberg 1.5.2 classes shows the current decoder also routes schema record names into `GenericAvroReader$ResolvingReadBuilder.recordReader`. `DynClasses$Builder.impl` calls `Class.forName(name, true, loader)`: class initialization can occur before type validation. See [decoder bytecode evidence](evidence/decoder-bytecode.txt).
+Bytecode inspection of the shipped Iceberg 1.5.2 classes shows the current decoder also routes schema record names into `GenericAvroReader$ResolvingReadBuilder.recordReader`. `DynClasses$Builder.impl` calls `Class.forName(name, true, loader)`: class initialization can occur before type validation.
 
 **Impact/condition:** someone who can write to the connector's control topic can submit schemas that select available classes for initialization, or malformed events that fail decoding. The group ID is not an authentication boundary. A useful code-execution gadget and a working exploit were **not** demonstrated. Decoder exceptions can also reach the coordinator loop, whose exception handler stops the coordinator thread (`CoordinatorThread.java`, lines 36–44).
 
@@ -211,20 +211,9 @@ These are required evidence requests for the proposed exception, **not assertion
 
 Do not consider deployment approved if control-topic access, artifact identity, or the retained critical/high risk dispositions remain unowned. The historical dev/CDC evidence supports functionality of that trial only; production CDC remains disabled unless separately approved.
 
-## 8. Evidence and reproducibility
+## 8. Reproducing the assessment
 
-| File | Purpose |
-| --- | --- |
-| [baseline-trivy.json](evidence/baseline-trivy.json) | Unmodified scanner package and vulnerability results, severities, CVSS vectors, descriptions and references |
-| [baseline-findings.csv](evidence/baseline-findings.csv) | All 89 matches for security-team triage |
-| [baseline.cdx.json](evidence/baseline.cdx.json) | Scanner-generated CycloneDX SBOM; use with the identification caveats in section 2 |
-| [baseline-jar-sha256.csv](evidence/baseline-jar-sha256.csv) | Complete 172-JAR inventory with ZIP entry, size and SHA-256 |
-| [baseline-gradle-dependencies.txt](evidence/baseline-gradle-dependencies.txt) | Baseline resolved runtime graph using recovered packaging inputs |
-| [decoder-bytecode.txt](evidence/decoder-bytecode.txt) | Read-only bytecode inspection supporting S01 and converter-class review |
-| [source-secrets-trivy.json](evidence/source-secrets-trivy.json) | Repository secret-scan result; no findings reported |
-| [osv-kafka-clients-3.7.0.json](evidence/osv-kafka-clients-3.7.0.json) | Worker-version advisory candidates and upstream fix information |
-| [osv-avro-1.11.4.json](evidence/osv-avro-1.11.4.json), [osv-iceberg-core-1.5.2.json](evidence/osv-iceberg-core-1.5.2.json) | OSV query results; empty responses mean no returned match, not a security guarantee |
-| [assessment-metadata.json](evidence/assessment-metadata.json) | Scanner/database identity, exact scan command, scope and evidence checksums |
+Raw scanner outputs, SBOMs, dependency reports, bytecode dumps, and hash inventories are not kept in this repository. This review preserves the historical baseline findings, artifact identity, methodology, and complete match register in Appendix A.
 
 After verifying and extracting an exact candidate ZIP into a dedicated directory, a comparable scan is:
 

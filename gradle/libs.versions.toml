@@ -10,6 +10,7 @@ iceberg-ver = "1.5.2"
 jackson-ver = "2.14.2"
 junit-ver = "5.10.0"
 kafka-ver = "3.5.1"
+parquet-ver = "1.15.2"
 slf4j-ver = "1.7.36"
 testcontainers-ver = "1.17.6"
 
@@ -53,6 +54,7 @@ junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "jun
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-ver" }
 junit-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-ver" }
 mockito = "org.mockito:mockito-core:4.8.1"
+parquet-hadoop = { module = "org.apache.parquet:parquet-hadoop", version.ref = "parquet-ver" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers-ver" }
 testcontainers-kafka = { module = "org.testcontainers:kafka", version.ref = "testcontainers-ver" }
 
