@@ -10,6 +10,7 @@ iceberg-ver = "1.5.2"
 jackson-ver = "2.14.2"
 junit-ver = "5.10.0"
 kafka-ver = "3.5.1"
+netty-ver = "4.1.137.Final"
 parquet-ver = "1.15.2"
 slf4j-ver = "1.7.36"
 testcontainers-ver = "1.17.6"
@@ -44,6 +45,7 @@ kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafk
 kafka-connect-api = { module = "org.apache.kafka:connect-api", version.ref = "kafka-ver" }
 kafka-connect-json = { module = "org.apache.kafka:connect-json", version.ref = "kafka-ver" }
 kafka-connect-transforms = { module = "org.apache.kafka:connect-transforms", version.ref = "kafka-ver" }
+netty-bom = { module = "io.netty:netty-bom", version.ref = "netty-ver" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-ver" }
 
 # test dependencies
