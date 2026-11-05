@@ -7,7 +7,7 @@ hadoop-ver = "3.3.6"
 hive-ver = "2.3.9"
 http-client-ver = "5.2.1"
 iceberg-ver = "1.5.2"
-jackson-ver = "2.14.2"
+jackson-ver = "2.18.11"
 junit-ver = "5.10.0"
 kafka-ver = "3.5.1"
 netty-ver = "4.1.137.Final"
@@ -39,8 +39,9 @@ iceberg-kafka-connect-events = {module = "org.apache.iceberg:iceberg-kafka-conne
 iceberg-nessie = { module = "org.apache.iceberg:iceberg-nessie", version.ref = "iceberg-ver" }
 iceberg-orc = { module = "org.apache.iceberg:iceberg-orc", version.ref = "iceberg-ver" }
 iceberg-parquet = { module = "org.apache.iceberg:iceberg-parquet", version.ref = "iceberg-ver" }
-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson-ver" }
-jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson-ver" }
+jackson-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson-ver" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "kafka-ver" }
 kafka-connect-api = { module = "org.apache.kafka:connect-api", version.ref = "kafka-ver" }
 kafka-connect-json = { module = "org.apache.kafka:connect-json", version.ref = "kafka-ver" }

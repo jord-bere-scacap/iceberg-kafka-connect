@@ -30,6 +30,16 @@ subprojects {
   sourceCompatibility = "1.8"
   targetCompatibility = "1.8"
 
+  dependencies {
+    implementation(enforcedPlatform(libs.jackson.bom))
+  }
+
+  plugins.withId("java-test-fixtures") {
+    dependencies {
+      testFixturesImplementation(enforcedPlatform(libs.jackson.bom))
+    }
+  }
+
   configurations.all {
     resolutionStrategy.eachDependency { details ->
       if (details.requested.group == "org.apache.parquet") {
