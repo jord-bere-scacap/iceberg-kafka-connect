@@ -30,8 +30,31 @@ subprojects {
   sourceCompatibility = "1.8"
   targetCompatibility = "1.8"
 
+  dependencies {
+    implementation(enforcedPlatform(libs.jackson.bom))
+  }
+
+  plugins.withId("java-test-fixtures") {
+    dependencies {
+      testFixturesImplementation(enforcedPlatform(libs.jackson.bom))
+    }
+  }
+
+  def standaloneVersions = [
+      "commons-beanutils:commons-beanutils": libs.versions.commons.beanutils.ver.get(),
+      "org.apache.httpcomponents.client5:httpclient5": libs.versions.http.client.ver.get(),
+      "org.apache.httpcomponents.core5:httpcore5": libs.versions.http.core.ver.get(),
+      "org.apache.httpcomponents.core5:httpcore5-h2": libs.versions.http.core.ver.get(),
+      "org.apache.commons:commons-lang3": libs.versions.commons.lang.ver.get(),
+  ]
+
   configurations.all {
     resolutionStrategy.eachDependency { details ->
+      def standaloneVersion = standaloneVersions["${details.requested.group}:${details.requested.name}".toString()]
+      if (standaloneVersion != null) {
+        details.useVersion standaloneVersion
+        details.because "Use patched standalone libraries for security findings D10, D12 and D13"
+      }
       if (details.requested.group == "org.apache.parquet") {
         details.useVersion libs.versions.parquet.ver.get()
         details.because "Align Parquet modules to fix CVE-2025-30065 and CVE-2025-46762"
