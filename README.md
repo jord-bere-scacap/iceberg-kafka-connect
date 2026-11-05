@@ -1,3 +1,5 @@
+# THIS IS A FORK OF THE DEPRECATED DATABRICKS FUNCTIONALITY
+
 # THIS REPOSITORY IS NOT MAINTAINED AS THE CODE HAS BEEN DONATED TO THE UPSTREAM APACHE ICEBERG PROJECT
 Please visit the [Documentation](https://iceberg.apache.org/docs/nightly/kafka-connect/) or find the current maintained source code [here](https://github.com/apache/iceberg/tree/main/kafka-connect)
 
