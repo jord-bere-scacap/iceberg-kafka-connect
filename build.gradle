@@ -50,6 +50,9 @@ subprojects {
       "dnsjava:dnsjava": libs.versions.dnsjava.ver.get(),
       "org.apache.hadoop.thirdparty:hadoop-shaded-guava": libs.versions.hadoop.shaded.guava.ver.get(),
       "org.bouncycastle:bcprov-jdk18on": libs.versions.bouncycastle.ver.get(),
+      "io.airlift:aircompressor": libs.versions.aircompressor.ver.get(),
+      "at.yawk.lz4:lz4-java": libs.versions.lz4.ver.get(),
+      "org.xerial.snappy:snappy-java": libs.versions.snappy.ver.get(),
   ]
 
   configurations.all {
@@ -57,7 +60,7 @@ subprojects {
       def standaloneVersion = standaloneVersions["${details.requested.group}:${details.requested.name}".toString()]
       if (standaloneVersion != null) {
         details.useVersion standaloneVersion
-        details.because "Use patched libraries for security findings D05 and D10–D14, including Hadoop transitives"
+        details.because "Use patched libraries for security findings D05–D08 and D10–D14, including Hadoop transitives"
       }
       if (details.requested.group == "org.apache.hadoop") {
         details.useVersion libs.versions.hadoop.ver.get()
@@ -71,6 +74,7 @@ subprojects {
     if (name != "originalIcebergGuava") {
       resolutionStrategy.dependencySubstitution {
         substitute module("org.apache.iceberg:iceberg-bundled-guava") using project(":iceberg-guava-patched") because "Replace Iceberg's relocated Guava for security finding D05"
+        substitute module("org.lz4:lz4-java") using module("at.yawk.lz4:lz4-java:${libs.versions.lz4.ver.get()}") because "Use one patched LZ4 implementation for security finding D07"
       }
     }
   }
