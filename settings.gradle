@@ -11,3 +11,4 @@ include "iceberg-kafka-connect-runtime"
 project(":iceberg-kafka-connect-runtime").projectDir = file("kafka-connect-runtime")
 
 include "iceberg-guava-patched"
+include "parquet-jackson-patched"
