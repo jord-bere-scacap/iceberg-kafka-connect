@@ -1,4 +1,5 @@
 [versions]
+aircompressor-ver = "2.0.3"
 assertj-ver = "3.24.2"
 avro-ver = "1.11.3"
 awaitility-ver = "4.2.0"
@@ -17,10 +18,12 @@ iceberg-ver = "1.5.2"
 jackson-ver = "2.18.11"
 junit-ver = "5.10.0"
 kafka-ver = "3.5.1"
+lz4-ver = "1.11.4"
 netty-ver = "4.1.137.Final"
 parquet-ver = "1.15.2"
 slf4j-ver = "1.7.36"
 shadow-ver = "8.1.1"
+snappy-ver = "1.1.10.9"
 testcontainers-ver = "1.17.6"
 
 
