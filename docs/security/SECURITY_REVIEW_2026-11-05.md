@@ -8,6 +8,8 @@
 
 **Compression verification:** [D06, D07 and D08 implementation and PR summary](COMPRESSION_PR_SUMMARY.md). Verification results are recorded separately from the historical assessment.
 
+**Parquet Jackson verification:** [D04 implementation and PR summary](PARQUET_JACKSON_PR_SUMMARY.md). The historical findings, recommendations and checkboxes below remain unchanged.
+
 ## Decision summary
 
 The verified baseline is **not a clean vulnerability scan**. Trivy 0.76.1 reported **89 package/advisory matches across 22 JARs**, representing **74 distinct CVEs**. The package-match totals are **2 critical, 43 high, 40 medium, and 4 low**. Counting each CVE once gives 2 critical, 34 high, 34 medium, and 4 low. These are scanner severities, not 89 demonstrated exploit paths.

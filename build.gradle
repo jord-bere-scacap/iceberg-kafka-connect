@@ -66,10 +66,13 @@ subprojects {
         details.useVersion libs.versions.hadoop.ver.get()
         details.because "Align Hadoop modules for security finding D14"
       }
-      if (details.requested.group == "org.apache.parquet") {
+      if (details.requested.group == "org.apache.parquet" && details.requested.name != "parquet-jackson") {
         details.useVersion libs.versions.parquet.ver.get()
         details.because "Align Parquet modules to fix CVE-2025-30065 and CVE-2025-46762"
       }
+    }
+    resolutionStrategy.dependencySubstitution {
+      substitute module("org.apache.parquet:parquet-jackson") using project(":parquet-jackson-patched") because "Replace Parquet's relocated Jackson for security finding D04"
     }
     if (name != "originalIcebergGuava") {
       resolutionStrategy.dependencySubstitution {
