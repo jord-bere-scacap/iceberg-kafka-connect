@@ -46,6 +46,10 @@ subprojects {
       "org.apache.httpcomponents.core5:httpcore5": libs.versions.http.core.ver.get(),
       "org.apache.httpcomponents.core5:httpcore5-h2": libs.versions.http.core.ver.get(),
       "org.apache.commons:commons-lang3": libs.versions.commons.lang.ver.get(),
+      "com.google.guava:guava": libs.versions.guava.ver.get(),
+      "dnsjava:dnsjava": libs.versions.dnsjava.ver.get(),
+      "org.apache.hadoop.thirdparty:hadoop-shaded-guava": libs.versions.hadoop.shaded.guava.ver.get(),
+      "org.bouncycastle:bcprov-jdk18on": libs.versions.bouncycastle.ver.get(),
   ]
 
   configurations.all {
@@ -53,11 +57,20 @@ subprojects {
       def standaloneVersion = standaloneVersions["${details.requested.group}:${details.requested.name}".toString()]
       if (standaloneVersion != null) {
         details.useVersion standaloneVersion
-        details.because "Use patched standalone libraries for security findings D10, D12 and D13"
+        details.because "Use patched libraries for security findings D05 and D10–D14, including Hadoop transitives"
+      }
+      if (details.requested.group == "org.apache.hadoop") {
+        details.useVersion libs.versions.hadoop.ver.get()
+        details.because "Align Hadoop modules for security finding D14"
       }
       if (details.requested.group == "org.apache.parquet") {
         details.useVersion libs.versions.parquet.ver.get()
         details.because "Align Parquet modules to fix CVE-2025-30065 and CVE-2025-46762"
+      }
+    }
+    if (name != "originalIcebergGuava") {
+      resolutionStrategy.dependencySubstitution {
+        substitute module("org.apache.iceberg:iceberg-bundled-guava") using project(":iceberg-guava-patched") because "Replace Iceberg's relocated Guava for security finding D05"
       }
     }
   }
