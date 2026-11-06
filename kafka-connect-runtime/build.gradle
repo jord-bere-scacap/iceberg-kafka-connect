@@ -10,7 +10,6 @@ configurations {
     resolutionStrategy.force "org.codehaus.jettison:jettison:1.5.4"
     resolutionStrategy.force "org.xerial.snappy:snappy-java:1.1.10.5"
     resolutionStrategy.force "org.apache.commons:commons-compress:1.26.0"
-    resolutionStrategy.force "org.apache.hadoop.thirdparty:hadoop-shaded-guava:1.1.1-tabular"
   }
 }
 
@@ -30,10 +29,12 @@ dependencies {
     exclude group: "org.apache.kerby"
     exclude group: "org.apache.hadoop", module: "hadoop-auth"
     exclude group: "org.apache.commons", module: "commons-configuration2"
-    exclude group: "org.apache.hadoop.thirdparty", module: "hadoop-shaded-protobuf_3_7"
+    exclude group: "org.apache.hadoop.thirdparty", module: "hadoop-shaded-protobuf_3_25"
     exclude group: "org.eclipse.jetty"
   }
   runtimeOnly libs.bundles.iceberg.ext
+  // Digester and Validator still reference BeanUtils after Hadoop stops bringing it transitively.
+  runtimeOnly libs.commons.beanutils
 
   hive libs.iceberg.hive.metastore
   hive(libs.hive.metastore) {

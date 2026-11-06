@@ -1,0 +1,67 @@
+plugins {
+  alias(libs.plugins.shadow)
+}
+
+version = libs.versions.guava.ver.get()
+
+configurations {
+  guavaRuntime {
+    canBeConsumed = false
+  }
+  originalIcebergGuava {
+    canBeConsumed = false
+    transitive = false
+  }
+}
+
+dependencies {
+  guavaRuntime libs.guava
+  originalIcebergGuava libs.iceberg.guava
+}
+
+// Keep the original marker and attribution without copying old Guava or its metadata.
+def originalBundle = providers.provider {
+  zipTree(configurations.originalIcebergGuava.singleFile)
+}
+
+tasks.named("jar") {
+  enabled = false
+  manifest.attributes.clear()
+  manifest.attributes(
+      "Implementation-Title": "Iceberg relocated Guava (locally patched)",
+      "Implementation-Version": project.version,
+      "Implementation-Vendor": "Scalable Capital",
+  )
+}
+
+tasks.named("shadowJar") {
+  archiveBaseName.set("iceberg-guava-patched")
+  archiveClassifier.set("")
+  configurations = [project.configurations.guavaRuntime]
+  relocate "com.google", "org.apache.iceberg.relocated.com.google"
+  from(originalBundle) {
+    include "org/apache/iceberg/GuavaClasses.class"
+  }
+  from(originalBundle) {
+    include "META-INF/LICENSE*", "META-INF/NOTICE*"
+    into "META-INF/iceberg-original"
+  }
+  exclude "META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA"
+  exclude "module-info.class", "META-INF/versions/**/module-info.class"
+  preserveFileTimestamps = false
+  reproducibleFileOrder = true
+  mergeServiceFiles()
+  append "META-INF/LICENSE"
+  append "META-INF/NOTICE"
+}
+
+// Consumers receive only the relocated JAR; unshaded build inputs stay private.
+configurations.apiElements.outgoing.artifacts.clear()
+configurations.runtimeElements.outgoing.artifacts.clear()
+configurations.apiElements.outgoing.variants.clear()
+configurations.runtimeElements.outgoing.variants.clear()
+configurations.shadowRuntimeElements.canBeConsumed = false
+artifacts {
+  apiElements tasks.named("shadowJar")
+  runtimeElements tasks.named("shadowJar")
+}
