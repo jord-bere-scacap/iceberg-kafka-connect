@@ -1,8 +1,36 @@
+import org.gradle.api.attributes.java.TargetJvmVersion
+
 plugins {
   id "distribution"
 }
 
 configurations {
+  glueConverterArchive {
+    canBeConsumed = false
+    transitive = false
+  }
+  glueMskRuntime {
+    canBeConsumed = false
+    extendsFrom runtimeClasspath
+    attributes {
+      attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+      attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+      attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+      attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+    }
+    exclude group: "javax.activation", module: "activation"
+    // Iceberg's AWS integration uses the aligned SDK modules below.
+    exclude group: "org.apache.iceberg", module: "iceberg-aws-bundle"
+    exclude group: "org.apache.iceberg", module: "iceberg-azure"
+    exclude group: "org.apache.iceberg", module: "iceberg-azure-bundle"
+    exclude group: "org.apache.iceberg", module: "iceberg-gcp"
+    exclude group: "org.apache.iceberg", module: "iceberg-gcp-bundle"
+    exclude group: "org.apache.iceberg", module: "iceberg-nessie"
+    // These APIs and authentication implementations are supplied by the MSK worker.
+    exclude group: "org.apache.kafka"
+    exclude group: "org.slf4j"
+    exclude group: "software.amazon.msk", module: "aws-msk-iam-auth"
+  }
   hive {
     extendsFrom runtimeClasspath
   }
@@ -13,6 +41,18 @@ configurations {
 }
 
 dependencies {
+  glueConverterArchive libs.glue.converter
+  glueMskRuntime libs.glue.common
+  glueMskRuntime libs.glue.serde
+  glueMskRuntime(enforcedPlatform(libs.aws.sdk.bom))
+  constraints {
+    glueMskRuntime(libs.scala.library) {
+      because "Fix CVE-2022-36944 in Glue's Scala 2.13 dependency"
+    }
+  }
+  ["s3", "glue", "sts", "kms", "dynamodb", "apache-client", "url-connection-client"].each {
+    glueMskRuntime "software.amazon.awssdk:${it}"
+  }
   implementation(enforcedPlatform(libs.netty.bom))
   implementation project(":iceberg-kafka-connect")
   implementation project(":iceberg-kafka-connect-transforms")
@@ -79,6 +119,69 @@ dependencies {
   testImplementation libs.http.client
 }
 
+def glueConverterThinJar = tasks.register("glueConverterThinJar", Jar) {
+  description = "Extracts only the Glue converter from its published fat JAR."
+  archiveBaseName.set("schema-registry-kafkaconnect-converter-thin")
+  archiveVersion.set(libs.versions.glue.ver)
+  preserveFileTimestamps = false
+  reproducibleFileOrder = true
+  from({ zipTree(configurations.glueConverterArchive.singleFile) }) {
+    include "com/amazonaws/services/schemaregistry/kafkaconnect/**"
+    // This converter-owned helper accesses Avro's package-private schema internals.
+    include "org/apache/avro/Schemas.class"
+    include "META-INF/maven/software.amazon.glue/schema-registry-kafkaconnect-converter/**"
+    include "META-INF/LICENSE*", "META-INF/NOTICE*"
+    include "LICENSE", "NOTICE"
+  }
+  manifest.attributes(
+      "Implementation-Title": "AWS Glue Schema Registry Kafka Connect converter (thin)",
+      "Implementation-Version": libs.versions.glue.ver.get(),
+      "Implementation-Vendor": "Amazon Web Services",
+  )
+}
+
+dependencies {
+  glueMskRuntime files(glueConverterThinJar)
+}
+
+sourceSets {
+  glueMskCompatibilityTest
+}
+
+checkstyle {
+  sourceSets = [project.sourceSets.main, project.sourceSets.test]
+}
+
+dependencies {
+  // File dependencies preserve the exact packaged graph and its exclusions.
+  glueMskCompatibilityTestImplementation files(configurations.glueMskRuntime)
+  ["kafka-clients", "connect-api", "connect-json", "connect-transforms"].each {
+    glueMskCompatibilityTestImplementation("org.apache.kafka:${it}:${libs.versions.msk.kafka.ver.get()}") {
+      transitive = false
+    }
+  }
+  glueMskCompatibilityTestImplementation libs.slf4j
+  glueMskCompatibilityTestImplementation libs.junit.api
+  glueMskCompatibilityTestImplementation libs.junit.params
+  glueMskCompatibilityTestImplementation libs.mockito
+  glueMskCompatibilityTestRuntimeOnly libs.junit.engine
+}
+
+tasks.named("compileGlueMskCompatibilityTestJava", JavaCompile) {
+  javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(17) }
+  options.release = 17
+}
+
+tasks.register("glueMskCompatibilityTest", Test) {
+  description = "Runs offline Glue/MSK compatibility checks on Java 17 and Kafka 3.7.0."
+  group = "verification"
+  testClassesDirs = sourceSets.glueMskCompatibilityTest.output.classesDirs
+  classpath = sourceSets.glueMskCompatibilityTest.runtimeClasspath
+  javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(17) }
+  useJUnitPlatform()
+  systemProperty "aws.disableEc2Metadata", "true"
+}
+
 processResources {
   filter {
     it.replace("__VERSION__", project.version.toString())
@@ -86,6 +189,17 @@ processResources {
 }
 
 distributions {
+  glueMsk {
+    contents {
+      from(processResources.destinationDir) { include "manifest.json" }
+      into("lib/") { from configurations.glueMskRuntime }
+      into("doc/") {
+        from "$rootDir/LICENSE"
+        from "$rootDir/README.md"
+      }
+      into("assets/") { from "$rootDir/logos" }
+    }
+  }
   main {
     contents {
       from(processResources.destinationDir) {
@@ -142,6 +256,17 @@ installDist.dependsOn processResources
 tasks.hiveDistTar.enabled = false
 hiveDistZip.dependsOn processResources
 installHiveDist.dependsOn processResources
+
+tasks.glueMskDistTar.enabled = false
+glueMskDistZip.dependsOn processResources
+installGlueMskDist.dependsOn processResources
+
+// The distribution plugin adds archives to assemble; keep Glue packaging explicitly opt-in.
+configurations.archives.artifacts.removeAll { artifact ->
+  artifact.buildDependencies.getDependencies(null).any {
+    it.name in ["glueMskDistZip", "glueMskDistTar"]
+  }
+}
 
 // build the install before test so it can be installed into kafka connect
 test.dependsOn installDist

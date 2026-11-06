@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "Order",
+  "namespace": "compatibility",
+  "fields": [
+    {"name": "id", "type": "string"},
+    {"name": "amount", "type": {"type": "bytes", "logicalType": "decimal", "precision": 18, "scale": 4}},
+    {"name": "created_at", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "note", "type": ["null", "string"], "default": null},
+    {"name": "customer", "type": {"type": "record", "name": "Customer", "fields": [
+      {"name": "name", "type": "string"},
+      {"name": "active", "type": "boolean"}
+    ]}}
+  ]
+}

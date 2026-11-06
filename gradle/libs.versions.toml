@@ -2,6 +2,7 @@
 aircompressor-ver = "2.0.3"
 assertj-ver = "3.24.2"
 avro-ver = "1.11.3"
+aws-sdk-ver = "2.32.25"
 awaitility-ver = "4.2.0"
 bson-ver = "4.11.0"
 bouncycastle-ver = "1.85"
@@ -9,6 +10,7 @@ commons-beanutils-ver = "1.11.0"
 commons-lang-ver = "3.18.0"
 dnsjava-ver = "3.6.5"
 guava-ver = "33.7.2-jre"
+glue-ver = "2.0.1"
 hadoop-ver = "3.4.3"
 hadoop-shaded-guava-ver = "1.6.0"
 hive-ver = "2.3.9"
@@ -18,18 +20,25 @@ iceberg-ver = "1.5.2"
 jackson-ver = "2.18.11"
 junit-ver = "5.10.0"
 kafka-ver = "3.5.1"
+msk-kafka-ver = "3.7.0"
 lz4-ver = "1.11.4"
 netty-ver = "4.1.137.Final"
 parquet-ver = "1.15.2"
+scala-ver = "2.13.9"
 slf4j-ver = "1.7.36"
 shadow-ver = "8.1.1"
 snappy-ver = "1.1.10.9"
 testcontainers-ver = "1.17.6"
+wire-ver = "7.0.1"
 
 
 
 [libraries]
 avro = { module = "org.apache.avro:avro", version.ref = "avro-ver" }
+aws-sdk-bom = { module = "software.amazon.awssdk:bom", version.ref = "aws-sdk-ver" }
+glue-converter = { module = "software.amazon.glue:schema-registry-kafkaconnect-converter", version.ref = "glue-ver" }
+glue-serde = { module = "software.amazon.glue:schema-registry-serde", version.ref = "glue-ver" }
+glue-common = { module = "software.amazon.glue:schema-registry-common", version.ref = "glue-ver" }
 bson = { module = "org.mongodb:bson", version.ref = "bson-ver"}
 commons-beanutils = { module = "commons-beanutils:commons-beanutils", version.ref = "commons-beanutils-ver" }
 guava = { module = "com.google.guava:guava", version.ref = "guava-ver" }
@@ -61,6 +70,7 @@ kafka-connect-api = { module = "org.apache.kafka:connect-api", version.ref = "ka
 kafka-connect-json = { module = "org.apache.kafka:connect-json", version.ref = "kafka-ver" }
 kafka-connect-transforms = { module = "org.apache.kafka:connect-transforms", version.ref = "kafka-ver" }
 netty-bom = { module = "io.netty:netty-bom", version.ref = "netty-ver" }
+scala-library = { module = "org.scala-lang:scala-library", version.ref = "scala-ver" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j-ver" }
 
 # test dependencies
